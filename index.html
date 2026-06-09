@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correcteur Graphique TOEIC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="mb-8 border-b border-gray-200 pb-4">
+            <h1 class="text-3xl font-bold text-slate-800">Tableau de Bord - Correction TOEIC</h1>
+            <p class="text-sm text-gray-500 mt-1">Outil d'analyse automatisé et d'export raffiné pour les sessions de rentrée et S6</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Session</h2>
+                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Sélectionner la période</label>
+                    <select id="session-select" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="rentree">TOEIC Rentrée</option>
+                        <option value="s6">TOEIC Semestre 6 (S6)</option>
+                        <option value="blanc1">TOEIC Blanc n°1</option>
+                    </select>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <span class="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md font-medium inline-block">💡 Invite Gemini connectée</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">2. Chargement des Grilles (Scans PDF)</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border-2 border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/30 hover:bg-blue-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-listening').click()">
+                        <input type="file" id="file-listening" class="hidden" accept=".pdf" onchange="updateFileStatus('listening', this)">
+                        <div class="flex flex-col items-center space-y-2">
+                            <div class="p-2 bg-blue-500 text-white rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-700">Section LISTENING</p>
+                            <p id="status-listening" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
+                        </div>
+                    </div>
+
+                    <div class="border-2 border-dashed border-emerald-200 rounded-xl p-4 bg-emerald-50/30 hover:bg-emerald-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-reading').click()">
+                        <input type="file" id="file-reading" class="hidden" accept=".pdf" onchange="updateFileStatus('reading', this)">
+                        <div class="flex flex-col items-center space-y-2">
+                            <div class="p-2 bg-emerald-500 text-white rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-700">Section READING</p>
+                            <p id="status-reading" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between bg-slate-800 text-white p-6 rounded-xl shadow-md mb-8">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-lg font-bold">Prêt pour l'analyse croisée</h3>
+                <p class="text-xs text-slate-400">Gemini comparera les copies chargées avec les clés de correction enregistrées.</p>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="simulerAnalyse()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
+                    🚀 Lancer la correction par Gemini
+                </button>
+                <button id="btn-export" onclick="exporterExcel()" class="bg-slate-700 text-slate-300 opacity-50 cursor-not-allowed px-5 py-2.5 rounded-lg text-sm font-semibold transition border border-slate-600" disabled>
+                    📥 Exporter vers Excel raffiné
+                </button>
+            </div>
+        </div>
+
+        <div id="results-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Résultats Extraits & Vérifiés</h2>
+                <span class="text-xs font-semibold bg-red-50 text-red-700 border border-red-200 px-2.5 py-1 rounded-full">⚠️ 2 Écarts de notation détectés</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider font-semibold border-b border-gray-200">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Nom / Prénom</th>
+                            <th class="p-3">Département</th>
+                            <th class="p-3 text-center">Score Copie</th>
+                            <th class="p-3 text-center">Score Réel</th>
+                            <th class="p-3 text-center">Listening (/495)</th>
+                            <th class="p-3 text-center">CECRL</th>
+                            <th class="p-3 text-center">Détail (P1-P4)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-sm divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de données simulée générée précédemment pour le Listening
+        const studentsData = [
+            {id: 93, nom: "MARY", prenom: "Clement", dept: "2A6BA", copie: 93, reel: 92, conv: 465, cecrl: "B2", p1:6, p2:23, p3:34, p4:29},
+            {id: 26, nom: "AMOVIN", prenom: "Damien", dept: "EIF2A3", copie: 26, reel: 25, conv: 180, cecrl: "A2", p1:3, p2:9, p3:10, p4:3},
+            {id: 13, nom: "CHIGANI", prenom: "Hilem", dept: "EIF2A3", copie: 93, reel: 93, conv: 470, cecrl: "B2", p1:6, p2:24, p3:35, p4:28},
+            {id: 68, nom: "COJAN", prenom: "Brice", dept: "EIF2A3", copie: 68, reel: 68, conv: 360, cecrl: "B1", p1:5, p2:17, p3:26, p4:20},
+            {id: 23, nom: "DE SOUZA", prenom: "Abla Dorine", dept: "EIF2A3", copie: 57, reel: 57, conv: 290, cecrl: "B1", p1:5, p2:13, p3:23, p4:16}
+        ];
+
+        function updateFileStatus(type, input) {
+            const status = document.getElementById('status-' + type);
+            if(input.files.length > 0) {
+                status.innerText = "📄 " + input.files[0].name + " chargé";
+                status.classList.remove('text-gray-400');
+                status.classList.add('text-blue-600', 'font-medium');
+            }
+        }
+
+        function simulerAnalyse() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            studentsData.forEach(st => {
+                const hasAlert = st.copie !== st.reel;
+                const row = document.createElement('tr');
+                if (hasAlert) row.className = "bg-amber-50/60 font-medium";
+                
+                row.innerHTML = `
+                    <td class="p-3 text-gray-500 font-mono">${st.id}</td>
+                    <td class="p-3 font-semibold text-gray-900">${st.nom} <span class="font-normal text-gray-600">${st.prenom}</span></td>
+                    <td class="p-3"><span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${st.dept}</span></td>
+                    <td class="p-3 text-center text-gray-500">${st.copie}</td>
+                    <td class="p-3 text-center ${hasAlert ? 'text-red-600 font-bold' : ''}">${st.reel}</td>
+                    <td class="p-3 text-center font-semibold text-blue-600">${st.conv}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">${st.cecrl}</span></td>
+                    <td class="p-3 text-center text-xs text-gray-500 font-mono">P1:${st.p1} | P2:${st.p2} | P3:${st.p3} | P4:${st.p4}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('results-section').classList.remove('hidden');
+            const btn = document.getElementById('btn-export');
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white');
+            btn.disabled = false;
+        }
+
+        async function exporterExcel() {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('TOEIC Extraction');
+            worksheet.views = [{ showGridLines: true }];
+
+            worksheet.mergeCells('A1:L1');
+            worksheet.getCell('A1').value = "Session TOEIC Rentrée - Résultats Compréhension Orale (Listening)";
+            worksheet.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: '1F497D' } };
+
+            const headers = ["ID", "Nom", "Prénom", "Département", "Score Copie", "Score Réel", "Score L (/495)", "Niveau L", "P1 (/6)", "P2 (/25)", "P3 (/39)", "P4 (/30)"];
+            const headerRow = worksheet.addRow(headers);
+            headerRow.height = 25;
+            headerRow.eachCell(cell => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '365F91' } };
+                cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFF' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+
+            studentsData.forEach((st, index) => {
+                const row = worksheet.addRow([st.id, st.nom, st.prenom, st.dept, st.copie, st.reel, st.conv, st.cecrl, st.p1, st.p2, st.p3, st.p4]);
+                row.height = 20;
+                const baseColor = index % 2 === 0 ? 'F2F5F8' : 'FFFFFF';
+                row.eachCell((cell, colNum) => {
+                    cell.font = { name: 'Calibri', size: 11 };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: baseColor } };
+                    if (st.copie !== st.reel && [5,6].includes(colNum)) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2CC' } };
+                        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'CC0000' } };
+                    }
+                });
+            });
+
+            worksheet.columns.forEach(column => { column.width = 14; });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `Correction_TOEIC_Raffinee.xlsx`;
+            anchor.click();
+        }
+    </script>
+</body>
+</html>

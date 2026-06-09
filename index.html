@@ -12,23 +12,26 @@
     <div class="max-w-6xl mx-auto px-4 py-8">
         <header class="mb-8 border-b border-gray-200 pb-4">
             <h1 class="text-3xl font-bold text-slate-800">Tableau de Bord - Correction TOEIC</h1>
-            <p class="text-sm text-gray-500 mt-1">Outil d'analyse automatisé et d'export raffiné pour les sessions de rentrée et S6</p>
+            <p class="text-sm text-gray-500 mt-1">Outil d'analyse automatisé et d'export raffiné pour les sessions d'ingénieurs</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Session</h2>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Sélectionner la période</label>
-                    <select id="session-select" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="rentree">TOEIC Rentrée</option>
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Configuration du Test</h2>
+                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Sélectionner la Session</label>
+                    <select id="session-select" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700">
+                        <option value="rentree-1">TOEIC Rentrée 1</option>
+                        <option value="rentree-2">TOEIC Rentrée 2</option>
+                        <option value="s5">TOEIC Semestre 5 (S5)</option>
                         <option value="s6">TOEIC Semestre 6 (S6)</option>
-                        <option value="blanc1">TOEIC Blanc n°1</option>
+                        <option value="s7">TOEIC Semestre 7 (S7)</option>
+                        <option value="ec-toeic">EC TOEIC</option>
                     </select>
                 </div>
                 <div class="mt-4 pt-4 border-t border-gray-100">
-                    <span class="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md font-medium inline-block">💡 Invite Gemini connectée</span>
+                    <span class="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md font-medium inline-block">💡 Protocole "correction toeic" actif</span>
                 </div>
             </div>
 
@@ -64,7 +67,7 @@
         <div class="flex flex-col md:flex-row items-center justify-between bg-slate-800 text-white p-6 rounded-xl shadow-md mb-8">
             <div class="mb-4 md:mb-0">
                 <h3 class="text-lg font-bold">Prêt pour l'analyse croisée</h3>
-                <p class="text-xs text-slate-400">Gemini comparera les copies chargées avec les clés de correction enregistrées.</p>
+                <p class="text-xs text-slate-400">Gemini comparera les copies chargées avec les clés de correction de la session sélectionnée.</p>
             </div>
             <div class="flex space-x-3">
                 <button onclick="simulerAnalyse()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
@@ -104,7 +107,7 @@
     </div>
 
     <script>
-        // Base de données simulée générée précédemment pour le Listening
+        // Données témoins du Listening pour valider l'interface
         const studentsData = [
             {id: 93, nom: "MARY", prenom: "Clement", dept: "2A6BA", copie: 93, reel: 92, conv: 465, cecrl: "B2", p1:6, p2:23, p3:34, p4:29},
             {id: 26, nom: "AMOVIN", prenom: "Damien", dept: "EIF2A3", copie: 26, reel: 25, conv: 180, cecrl: "A2", p1:3, p2:9, p3:10, p4:3},
@@ -116,7 +119,7 @@
         function updateFileStatus(type, input) {
             const status = document.getElementById('status-' + type);
             if(input.files.length > 0) {
-                status.innerText = "📄 " + input.files[0].name + " chargé";
+                status.innerText = "📄 " + input.files[0].name;
                 status.classList.remove('text-gray-400');
                 status.classList.add('text-blue-600', 'font-medium');
             }
@@ -152,12 +155,15 @@
         }
 
         async function exporterExcel() {
+            const selectEl = document.getElementById('session-select');
+            const sessionName = selectEl.options[selectEl.selectedIndex].text;
+
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('TOEIC Extraction');
             worksheet.views = [{ showGridLines: true }];
 
             worksheet.mergeCells('A1:L1');
-            worksheet.getCell('A1').value = "Session TOEIC Rentrée - Résultats Compréhension Orale (Listening)";
+            worksheet.getCell('A1').value = `Session ${sessionName} - Résultats Compréhension Orale (Listening)`;
             worksheet.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: '1F497D' } };
 
             const headers = ["ID", "Nom", "Prénom", "Département", "Score Copie", "Score Réel", "Score L (/495)", "Niveau L", "P1 (/6)", "P2 (/25)", "P3 (/39)", "P4 (/30)"];
@@ -170,7 +176,7 @@
             });
 
             studentsData.forEach((st, index) => {
-                const row = worksheet.addRow([st.id, st.nom, st.prenom, st.dept, st.copie, st.reel, st.conv, st.cecrl, st.p1, st.p2, st.p3, st.p4]);
+                const row = worksheet.addRow([st.id, st.nom, st.prenom, st.st ? st.dept : st.dept, st.copie, st.reel, st.conv, st.cecrl, st.p1, st.p2, st.p3, st.p4]);
                 row.height = 20;
                 const baseColor = index % 2 === 0 ? 'F2F5F8' : 'FFFFFF';
                 row.eachCell((cell, colNum) => {
@@ -190,7 +196,7 @@
             const url = window.URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
-            anchor.download = `Correction_TOEIC_Raffinee.xlsx`;
+            anchor.download = `Correction_${sessionName.replace(/ /g, '_')}_Raffinee.xlsx`;
             anchor.click();
         }
     </script>

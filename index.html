@@ -27,6 +27,299 @@
                         <option value="s5">TOEIC Semestre 5 (S5)</option>
                         <option value="s6">TOEIC Semestre 6 (S6)</option>
                         <option value="s7">TOEIC Semestre 7 (S7)</option>
+                        <option value="rattrapage-ec">Rattrapage Septembre EC</option>
+                    </select>
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <span class="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md font-medium inline-block">✅ Clés de correction intégrées</span>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-700 mb-4">2. Chargement des Grilles Étudiants</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border-2 border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/30 hover:bg-blue-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-listening').click()">
+                        <input type="file" id="file-listening" class="hidden" accept=".pdf,.csv" onchange="updateFileStatus('listening', this)">
+                        <div class="flex flex-col items-center space-y-2">
+                            <div class="p-2 bg-blue-500 text-white rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-700">Section LISTENING</p>
+                            <p id="status-listening" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
+                        </div>
+                    </div>
+
+                    <div class="border-2 border-dashed border-emerald-200 rounded-xl p-4 bg-emerald-50/30 hover:bg-emerald-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-reading').click()">
+                        <input type="file" id="file-reading" class="hidden" accept=".pdf,.csv" onchange="updateFileStatus('reading', this)">
+                        <div class="flex flex-col items-center space-y-2">
+                            <div class="p-2 bg-emerald-500 text-white rounded-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-700">Section READING</p>
+                            <p id="status-reading" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row items-center justify-between bg-slate-800 text-white p-6 rounded-xl shadow-md mb-8">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-lg font-bold">Prêt pour l'analyse croisée</h3>
+                <p class="text-xs text-slate-400">L'application comparera les copies chargées avec les clés de correction de la session sélectionnée.</p>
+            </div>
+            <div class="flex space-x-3">
+                <button onclick="simulerAnalyse()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
+                    🚀 Lancer la correction
+                </button>
+                <button id="btn-export" onclick="exporterExcel()" class="bg-slate-700 text-slate-300 opacity-50 cursor-not-allowed px-5 py-2.5 rounded-lg text-sm font-semibold transition border border-slate-600" disabled>
+                    📥 Exporter vers Excel
+                </button>
+            </div>
+        </div>
+
+        <div id="results-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Résultats Extraits & Vérifiés</h2>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider font-semibold border-b border-gray-200">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Nom / Prénom</th>
+                            <th class="p-3">Département</th>
+                            <th class="p-3 text-center">Score Copie</th>
+                            <th class="p-3 text-center">Score Réel</th>
+                            <th class="p-3 text-center">Score (/495)</th>
+                            <th class="p-3 text-center">CECRL</th>
+                            <th class="p-3 text-center">Détail (P1-P4)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="text-sm divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. GRILLES DE CONVERSION ETS
+        // ==========================================
+        const conversionTable = {
+            listening: {
+                0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 10, 8: 10, 9: 10,
+                10: 15, 11: 20, 12: 25, 13: 30, 14: 35, 15: 40, 16: 45, 17: 50, 18: 55, 19: 60,
+                20: 65, 21: 70, 22: 75, 23: 80, 24: 85, 25: 90, 26: 95, 27: 100, 28: 110, 29: 115,
+                30: 120, 31: 125, 32: 130, 33: 135, 34: 140, 35: 145, 36: 150, 37: 160, 38: 165, 39: 170,
+                40: 175, 41: 180, 42: 185, 43: 190, 44: 195, 45: 200, 46: 210, 47: 215, 48: 220, 49: 225,
+                50: 230, 51: 240, 52: 245, 53: 250, 54: 255, 55: 260, 56: 265, 57: 270, 58: 280, 59: 285,
+                60: 290, 61: 295, 62: 300, 63: 305, 64: 310, 65: 320, 66: 325, 67: 330, 68: 335, 69: 340,
+                70: 350, 71: 355, 72: 360, 73: 365, 74: 370, 75: 375, 76: 380, 77: 390, 78: 395, 79: 400,
+                80: 405, 81: 410, 82: 415, 83: 420, 84: 425, 85: 430, 86: 440, 87: 445, 88: 450, 89: 455,
+                90: 460, 91: 465, 92: 470, 93: 475, 94: 480, 95: 485, 96: 490, 97: 495, 98: 495, 99: 495, 100: 495
+            },
+            reading: {
+                0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5,
+                10: 5, 11: 5, 12: 5, 13: 5, 14: 5, 15: 5, 16: 10, 17: 10, 18: 15, 19: 20,
+                20: 25, 21: 30, 22: 35, 23: 40, 24: 45, 25: 50, 26: 60, 27: 65, 28: 70, 29: 75,
+                30: 80, 31: 85, 32: 90, 33: 95, 34: 100, 35: 110, 36: 115, 37: 120, 38: 125, 39: 130,
+                40: 135, 41: 140, 42: 145, 43: 150, 44: 160, 45: 165, 46: 170, 47: 175, 48: 180, 49: 185,
+                50: 190, 51: 200, 52: 205, 53: 210, 54: 215, 55: 220, 56: 225, 57: 230, 58: 240, 59: 245,
+                60: 250, 61: 255, 62: 260, 63: 265, 64: 270, 65: 280, 66: 285, 67: 290, 68: 295, 69: 300,
+                70: 305, 71: 310, 72: 315, 73: 325, 74: 330, 75: 335, 76: 340, 77: 345, 78: 350, 79: 355,
+                80: 365, 81: 370, 82: 375, 83: 380, 84: 385, 85: 390, 86: 395, 87: 400, 88: 405, 89: 415,
+                90: 420, 91: 425, 92: 430, 93: 435, 94: 440, 95: 445, 96: 450, 97: 460, 98: 465, 99: 470, 100: 495
+            }
+        };
+
+        // ==========================================
+        // 2. DICTIONNAIRE DES CLES DE REPONSES
+        // ==========================================
+        const toeicAnswerKeys = {
+            "rentree-1": {
+                listening: ["A","C","D","B","A","C","B","D","A","B","C","A","B","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B"],
+                reading: ["B","C","A","D","B","A","D","C","D","A","B","C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B"]
+            },
+            "rentree-2": {
+                listening: ["B","D","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C"],
+                reading: ["C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B"]
+            },
+            "s5": {
+                listening: ["C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B"],
+                reading: ["A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C"]
+            },
+            "s6": {
+                listening: ["B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C"],
+                reading: ["D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A"]
+            },
+            "s7": {
+                listening: ["A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C","D"],
+                reading: ["B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D"]
+            },
+            "rattrapage-ec": {
+                listening: ["A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C","D","B"],
+                reading: ["A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D","B","A"]
+            }
+        };
+
+        // ==========================================
+        // 3. FONCTION DE CORRESPONDANCE (MAPPING)
+        // ==========================================
+        function getSessionKeyFromFileName(fileName) {
+            const name = fileName.toLowerCase();
+            
+            if (name.includes('rentree') || name.includes('rentrée')) {
+                if (name.includes('second') || name.includes('2')) return 'rentree-2';
+                return 'rentree-1';
+            }
+            if (name.includes('s5')) return 's5';
+            if (name.includes('s6')) return 's6';
+            if (name.includes('s7')) return 's7';
+            if (name.includes('rattrapage') || name.includes('ec')) return 'rattrapage-ec';
+            
+            return null;
+        }
+
+        // ==========================================
+        // LOGIQUE D'INTERFACE
+        // ==========================================
+        
+        // Données fictives pour la démonstration d'affichage
+        const studentsData = [
+            {id: 93, nom: "MARY", prenom: "Clement", dept: "2A6BA", copie: 93, reel: 92, conv: 465, cecrl: "B2", p1:6, p2:23, p3:34, p4:29},
+            {id: 26, nom: "AMOVIN", prenom: "Damien", dept: "EIF2A3", copie: 26, reel: 25, conv: 180, cecrl: "A2", p1:3, p2:9, p3:10, p4:3},
+            {id: 13, nom: "CHIGANI", prenom: "Hilem", dept: "EIF2A3", copie: 93, reel: 93, conv: 470, cecrl: "B2", p1:6, p2:24, p3:35, p4:28},
+            {id: 68, nom: "COJAN", prenom: "Brice", dept: "EIF2A3", copie: 68, reel: 68, conv: 360, cecrl: "B1", p1:5, p2:17, p3:26, p4:20},
+            {id: 23, nom: "DE SOUZA", prenom: "Abla Dorine", dept: "EIF2A3", copie: 57, reel: 57, conv: 290, cecrl: "B1", p1:5, p2:13, p3:23, p4:16}
+        ];
+
+        function updateFileStatus(type, input) {
+            const status = document.getElementById('status-' + type);
+            if(input.files.length > 0) {
+                const fileName = input.files[0].name;
+                status.innerText = "📄 " + fileName + " chargé";
+                status.classList.remove('text-gray-400');
+                status.classList.add('text-blue-600', 'font-medium');
+
+                // Détection automatique de la session en fonction du nom du fichier
+                const detectedSession = getSessionKeyFromFileName(fileName);
+                if(detectedSession) {
+                    document.getElementById('session-select').value = detectedSession;
+                }
+            }
+        }
+
+        function simulerAnalyse() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            // Simulation : Dans le futur, cette boucle itèrera sur les vraies réponses ZipGrade extraites
+            // pour les comparer avec `toeicAnswerKeys[sessionChoisie]` et convertir avec `conversionTable`.
+            studentsData.forEach(st => {
+                const hasAlert = st.copie !== st.reel;
+                const row = document.createElement('tr');
+                if (hasAlert) row.className = "bg-amber-50/60 font-medium";
+                
+                row.innerHTML = `
+                    <td class="p-3 text-gray-500 font-mono">${st.id}</td>
+                    <td class="p-3 font-semibold text-gray-900">${st.nom} <span class="font-normal text-gray-600">${st.prenom}</span></td>
+                    <td class="p-3"><span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${st.dept}</span></td>
+                    <td class="p-3 text-center text-gray-500">${st.copie}</td>
+                    <td class="p-3 text-center ${hasAlert ? 'text-red-600 font-bold' : ''}">${st.reel}</td>
+                    <td class="p-3 text-center font-semibold text-blue-600">${st.conv}</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">${st.cecrl}</span></td>
+                    <td class="p-3 text-center text-xs text-gray-500 font-mono">P1:${st.p1} | P2:${st.p2} | P3:${st.p3} | P4:${st.p4}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('results-section').classList.remove('hidden');
+            const btn = document.getElementById('btn-export');
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white');
+            btn.disabled = false;
+        }
+
+        async function exporterExcel() {
+            const selectEl = document.getElementById('session-select');
+            const sessionName = selectEl.options[selectEl.selectedIndex].text;
+
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('TOEIC Extraction');
+            worksheet.views = [{ showGridLines: true }];
+
+            worksheet.mergeCells('A1:L1');
+            worksheet.getCell('A1').value = `Session ${sessionName} - Résultats Compréhension Orale (Listening)`;
+            worksheet.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: '1F497D' } };
+
+            const headers = ["ID", "Nom", "Prénom", "Département", "Score Copie", "Score Réel", "Score L (/495)", "Niveau L", "P1 (/6)", "P2 (/25)", "P3 (/39)", "P4 (/30)"];
+            const headerRow = worksheet.addRow(headers);
+            headerRow.height = 25;
+            headerRow.eachCell(cell => {
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '365F91' } };
+                cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFF' } };
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            });
+
+            studentsData.forEach((st, index) => {
+                const row = worksheet.addRow([st.id, st.nom, st.prenom, st.dept, st.copie, st.reel, st.conv, st.cecrl, st.p1, st.p2, st.p3, st.p4]);
+                row.height = 20;
+                const baseColor = index % 2 === 0 ? 'F2F5F8' : 'FFFFFF';
+                row.eachCell((cell, colNum) => {
+                    cell.font = { name: 'Calibri', size: 11 };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: baseColor } };
+                    if (st.copie !== st.reel && [5,6].includes(colNum)) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2CC' } };
+                        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'CC0000' } };
+                    }
+                });
+            });
+
+            worksheet.columns.forEach(column => { column.width = 14; });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = `Correction_${sessionName.replace(/ /g, '_')}_Raffinee.xlsx`;
+            anchor.click();
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correcteur Graphique TOEIC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="mb-8 border-b border-gray-200 pb-4">
+            <h1 class="text-3xl font-bold text-slate-800">Tableau de Bord - Correction TOEIC</h1>
+            <p class="text-sm text-gray-500 mt-1">Outil d'analyse automatisé et d'export raffiné pour les sessions d'ingénieurs</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Configuration du Test</h2>
+                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Sélectionner la Session</label>
+                    <select id="session-select" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700">
+                        <option value="rentree-1">TOEIC Rentrée 1</option>
+                        <option value="rentree-2">TOEIC Rentrée 2</option>
+                        <option value="s5">TOEIC Semestre 5 (S5)</option>
+                        <option value="s6">TOEIC Semestre 6 (S6)</option>
+                        <option value="s7">TOEIC Semestre 7 (S7)</option>
                         <option value="ec-toeic">EC TOEIC</option>
                     </select>
                 </div>

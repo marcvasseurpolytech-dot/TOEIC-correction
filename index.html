@@ -1,294 +1,747 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Correcteur Graphique TOEIC</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correcteur TOEIC Vision — Polytech Lille</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0d1b2a;--navy2:#162032;--gold:#c9a84c;--gold2:#e8c96a;--cream:#f5f0e8;--cream2:#ece5d5;--white:#ffffff;--red:#c0392b;--green:#27ae60;--blue:#2980b9;--purple:#6a1fa0;--warn:#e67e22;--text:#1a2535;--muted:#6b7c93;--border:#d4c9b0;--mono:'JetBrains Mono',monospace;--serif:'Source Serif 4',Georgia,serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--text);font-family:var(--serif);min-height:100vh}
+header{background:var(--navy);border-bottom:3px solid var(--gold);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{font-family:var(--serif);font-size:1.35rem;font-weight:700;color:var(--cream)}
+header .sub{font-family:var(--mono);font-size:.62rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;display:block;margin-top:3px}
+header .badge{font-family:var(--mono);font-size:.63rem;color:var(--gold);border:1px solid var(--gold);padding:4px 10px;border-radius:3px;letter-spacing:.08em;white-space:nowrap}
+main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+.panel{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:22px 24px;margin-bottom:18px}
+.panel-title{font-family:var(--mono);font-size:.7rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--cream2);padding-bottom:9px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+label.lbl{display:block;font-family:var(--mono);font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;margin-top:12px}
+label.lbl:first-child{margin-top:0}
+select,input[type=text]{width:100%;background:var(--cream);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:var(--mono);font-size:.8rem;color:var(--text);outline:none;transition:border .15s}
+select:focus,input[type=text]:focus{border-color:var(--gold)}
+
+/* DROP ZONES */
+.dropzone{border:2px dashed var(--border);border-radius:8px;padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+.dropzone:hover,.dropzone.drag-over{border-color:var(--gold);background:#fdf8ef}
+.dropzone.loaded{border-color:var(--green);background:#f0fff6;cursor:default}
+.dropzone.processing{border-color:var(--blue);background:#eef5fd;cursor:default}
+.dropzone.error-state{border-color:var(--red);background:#fdf0f0}
+.dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dropzone.loaded input[type=file],.dropzone.processing input[type=file]{pointer-events:none}
+.dz-icon{font-size:2rem;line-height:1}
+.dz-label{font-family:var(--mono);font-size:.75rem;font-weight:600;color:var(--navy2)}
+.dz-hint{font-family:var(--mono);font-size:.63rem;color:var(--muted)}
+.dz-status{font-family:var(--mono);font-size:.68rem;font-weight:600;margin-top:2px}
+.dz-status.ok{color:var(--green)}
+.dz-status.err{color:var(--red)}
+.dz-status.info{color:var(--blue)}
+
+/* PROGRESS */
+.prog-wrap{margin-top:10px;background:var(--cream2);border-radius:4px;height:8px;overflow:hidden;display:none}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width .3s;width:0%}
+.prog-label{font-family:var(--mono);font-size:.63rem;color:var(--muted);margin-top:5px;display:none}
+
+/* ACTION BAR */
+.action-bar{background:var(--navy);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+.action-msg{font-family:var(--mono);font-size:.68rem;color:#8fa3bb;line-height:1.8}
+.action-msg span{color:var(--gold);font-weight:600}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:.73rem;font-weight:600;letter-spacing:.05em;padding:9px 20px;border:none;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-gold:hover:not(:disabled){background:var(--gold2)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover:not(:disabled){background:#219150}
+.btn-ghost{background:transparent;color:#8fa3bb;border:1px solid #3a4e66}
+.btn-ghost:hover{background:#1e2e45}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* LOG */
+#log-section{display:none}
+.log-box{background:var(--navy);border-radius:5px;padding:14px 16px;max-height:260px;overflow-y:auto;font-family:var(--mono);font-size:.65rem;line-height:1.7;color:#8fa3bb}
+.log-box .log-ok{color:var(--green)}
+.log-box .log-warn{color:var(--warn)}
+.log-box .log-err{color:var(--red)}
+.log-box .log-info{color:var(--gold)}
+.log-box .log-dim{color:#3a4e66}
+
+/* RESULTS */
+#results-section{display:none}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:680px){.stat-grid{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--navy);border-radius:5px;padding:13px 15px;text-align:center}
+.stat-val{font-family:var(--mono);font-size:1.45rem;font-weight:600;color:var(--gold)}
+.stat-lbl{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:#8fa3bb;margin-top:3px}
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:18px}
+.tab{font-family:var(--mono);font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab:hover:not(.active){color:var(--navy)}
+.table-wrap{overflow-x:auto}
+table.res{width:100%;border-collapse:collapse;font-size:.8rem}
+table.res thead tr{background:var(--navy)}
+table.res thead th{font-family:var(--mono);font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);padding:9px 9px;white-space:nowrap;text-align:center}
+table.res thead th.left{text-align:left}
+table.res tbody tr{border-bottom:1px solid var(--cream2);transition:background .1s}
+table.res tbody tr:hover{background:#fdf8ef}
+table.res tbody tr.anomaly{background:#fff8ec}
+table.res tbody tr.low-conf{background:#fdf0f0}
+table.res td{padding:7px 9px;vertical-align:middle}
+table.res td.center{text-align:center}
+.cecrl-badge{display:inline-block;font-family:var(--mono);font-size:.63rem;font-weight:600;padding:2px 6px;border-radius:3px}
+.cecrl-A1{background:#fde8e8;color:#c0392b}
+.cecrl-A2{background:#fef0d8;color:#d35400}
+.cecrl-B1{background:#fdf9e0;color:#b7950b}
+.cecrl-B2{background:#e8f5e9;color:#1e8449}
+.cecrl-C1{background:#e8f0fe;color:#1a56cc}
+.dept-badge{font-family:var(--mono);font-size:.6rem;background:var(--cream2);color:var(--muted);padding:2px 5px;border-radius:3px}
+.score-l{color:var(--blue);font-family:var(--mono);font-weight:600}
+.score-r{color:var(--purple);font-family:var(--mono);font-weight:600}
+.score-total{font-family:var(--mono);font-weight:700;font-size:.9rem;color:var(--navy)}
+.mono-sm{font-family:var(--mono);font-size:.74rem}
+.conf-low{color:var(--red);font-family:var(--mono);font-size:.63rem}
+.conf-ok{color:var(--green);font-family:var(--mono);font-size:.63rem}
+.detail-cell{font-family:var(--mono);font-size:.6rem;color:var(--muted);white-space:nowrap}
+
+/* REVIEW PANEL */
+#review-section{display:none}
+.review-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.review-card{border:1px solid var(--border);border-radius:6px;padding:14px;background:var(--white)}
+.review-card.low-conf{border-color:var(--red);background:#fdf6f6}
+.review-card h4{font-family:var(--mono);font-size:.7rem;font-weight:600;color:var(--navy);margin-bottom:8px}
+.review-card img{width:100%;border-radius:4px;border:1px solid var(--border)}
+.review-answers{font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-top:8px;line-height:1.8;word-break:break-all}
+
+/* INFO BOX */
+.info-box{background:var(--cream);border:1px solid var(--border);border-radius:5px;padding:12px 14px;font-family:var(--mono);font-size:.67rem;color:var(--muted);line-height:1.7}
+.info-box strong{color:var(--navy)}
+</style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans text-gray-800">
+<body>
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <header class="mb-8 border-b border-gray-200 pb-4">
-            <h1 class="text-3xl font-bold text-slate-800">Tableau de Bord - Correction TOEIC</h1>
-            <p class="text-sm text-gray-500 mt-1">Outil d'analyse automatisé et d'export raffiné pour les sessions d'ingénieurs</p>
-        </header>
+<header>
+  <div>
+    <h1>Correcteur TOEIC — Vision IA</h1>
+    <span class="sub">Polytech Lille — Lecture automatique des feuilles de réponses</span>
+  </div>
+  <span class="badge">MARC VASSEUR | POLYTECH LILLE</span>
+</header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-lg font-semibold text-gray-700 mb-4">1. Configuration du Test</h2>
-                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Sélectionner la Session</label>
-                    <select id="session-select" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium text-gray-700">
-                        <option value="rentree-1">TOEIC Rentrée 1</option>
-                        <option value="rentree-2">TOEIC Rentrée 2</option>
-                        <option value="s5">TOEIC Semestre 5 (S5)</option>
-                        <option value="s6">TOEIC Semestre 6 (S6)</option>
-                        <option value="s7">TOEIC Semestre 7 (S7)</option>
-                        <option value="rattrapage-ec">Rattrapage Septembre EC</option>
-                    </select>
-                </div>
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    <span class="text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md font-medium inline-block">✅ Clés de correction intégrées</span>
-                </div>
-            </div>
+<main>
 
-            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-700 mb-4">2. Chargement des Grilles Étudiants</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border-2 border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/30 hover:bg-blue-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-listening').click()">
-                        <input type="file" id="file-listening" class="hidden" accept=".pdf,.csv" onchange="updateFileStatus('listening', this)">
-                        <div class="flex flex-col items-center space-y-2">
-                            <div class="p-2 bg-blue-500 text-white rounded-lg">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z"></path></svg>
-                            </div>
-                            <p class="text-sm font-semibold text-gray-700">Section LISTENING</p>
-                            <p id="status-listening" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
-                        </div>
-                    </div>
-
-                    <div class="border-2 border-dashed border-emerald-200 rounded-xl p-4 bg-emerald-50/30 hover:bg-emerald-50/60 transition cursor-pointer text-center relative" onclick="document.getElementById('file-reading').click()">
-                        <input type="file" id="file-reading" class="hidden" accept=".pdf,.csv" onchange="updateFileStatus('reading', this)">
-                        <div class="flex flex-col items-center space-y-2">
-                            <div class="p-2 bg-emerald-500 text-white rounded-lg">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                            </div>
-                            <p class="text-sm font-semibold text-gray-700">Section READING</p>
-                            <p id="status-reading" class="text-xs text-gray-400">Glisser-déposer ou cliquer pour ajouter</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row items-center justify-between bg-slate-800 text-white p-6 rounded-xl shadow-md mb-8">
-            <div class="mb-4 md:mb-0">
-                <h3 class="text-lg font-bold">Prêt pour l'analyse croisée</h3>
-                <p class="text-xs text-slate-400">L'application comparera les copies chargées avec les clés de correction de la session sélectionnée.</p>
-            </div>
-            <div class="flex space-x-3">
-                <button onclick="simulerAnalyse()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm">
-                    🚀 Lancer la correction
-                </button>
-                <button id="btn-export" onclick="exporterExcel()" class="bg-slate-700 text-slate-300 opacity-50 cursor-not-allowed px-5 py-2.5 rounded-lg text-sm font-semibold transition border border-slate-600" disabled>
-                    📥 Exporter vers Excel
-                </button>
-            </div>
-        </div>
-
-        <div id="results-section" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hidden">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-800">Résultats Extraits & Vérifiés</h2>
-            </div>
-            
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider font-semibold border-b border-gray-200">
-                            <th class="p-3">ID</th>
-                            <th class="p-3">Nom / Prénom</th>
-                            <th class="p-3">Département</th>
-                            <th class="p-3 text-center">Score Copie</th>
-                            <th class="p-3 text-center">Score Réel</th>
-                            <th class="p-3 text-center">Score (/495)</th>
-                            <th class="p-3 text-center">CECRL</th>
-                            <th class="p-3 text-center">Détail (P1-P4)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body" class="text-sm divide-y divide-gray-100">
-                        </tbody>
-                </table>
-            </div>
-        </div>
+<!-- 01 CONFIG -->
+<div class="grid2">
+  <div class="panel">
+    <div class="panel-title">01 — Session</div>
+    <label class="lbl">Session TOEIC</label>
+    <select id="session-select" onchange="onSessionChange()">
+      <option value="rentree-1">TOEIC Rentrée 1</option>
+      <option value="rentree-2">TOEIC Rentrée 2</option>
+      <option value="s5">TOEIC Semestre 5 (S5)</option>
+      <option value="s6">TOEIC Semestre 6 (S6)</option>
+      <option value="s7">TOEIC Semestre 7 (S7)</option>
+      <option value="rattrapage-ec">Rattrapage Septembre EC</option>
+    </select>
+    <label class="lbl" style="margin-top:14px">Nom du groupe / promo</label>
+    <input type="text" id="group-name" placeholder="ex. PEIP2 Groupe A — S5">
+    <label class="lbl">Département par défaut</label>
+    <input type="text" id="dept-default" placeholder="ex. EIF2A3">
+  </div>
+  <div class="panel">
+    <div class="panel-title">02 — Comment ça fonctionne</div>
+    <div class="info-box">
+      <strong>1. Chargez les 2 PDFs</strong> (Listening et Reading).<br>
+      <strong>2. Lancez l'analyse.</strong> Chaque page est convertie en image et envoyée à <strong>Claude Vision</strong> qui lit les bulles ZipGrade et extrait l'ID étudiant + les 100 réponses A/B/C/D.<br>
+      <strong>3. La correction</strong> compare les réponses extraites aux clés ETS et calcule les scores L/495, R/495, Total/990 et CECRL.<br>
+      <strong>4. Export Excel</strong> avec mise en forme couleur Polytech.<br><br>
+      ⚠ Les pages avec <strong>confiance faible</strong> (bulles ambiguës) sont signalées en rouge pour vérification manuelle.
     </div>
+  </div>
+</div>
 
-    <script>
-        // ==========================================
-        // 1. GRILLES DE CONVERSION ETS
-        // ==========================================
-        const conversionTable = {
-            listening: {
-                0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 10, 8: 10, 9: 10,
-                10: 15, 11: 20, 12: 25, 13: 30, 14: 35, 15: 40, 16: 45, 17: 50, 18: 55, 19: 60,
-                20: 65, 21: 70, 22: 75, 23: 80, 24: 85, 25: 90, 26: 95, 27: 100, 28: 110, 29: 115,
-                30: 120, 31: 125, 32: 130, 33: 135, 34: 140, 35: 145, 36: 150, 37: 160, 38: 165, 39: 170,
-                40: 175, 41: 180, 42: 185, 43: 190, 44: 195, 45: 200, 46: 210, 47: 215, 48: 220, 49: 225,
-                50: 230, 51: 240, 52: 245, 53: 250, 54: 255, 55: 260, 56: 265, 57: 270, 58: 280, 59: 285,
-                60: 290, 61: 295, 62: 300, 63: 305, 64: 310, 65: 320, 66: 325, 67: 330, 68: 335, 69: 340,
-                70: 350, 71: 355, 72: 360, 73: 365, 74: 370, 75: 375, 76: 380, 77: 390, 78: 395, 79: 400,
-                80: 405, 81: 410, 82: 415, 83: 420, 84: 425, 85: 430, 86: 440, 87: 445, 88: 450, 89: 455,
-                90: 460, 91: 465, 92: 470, 93: 475, 94: 480, 95: 485, 96: 490, 97: 495, 98: 495, 99: 495, 100: 495
-            },
-            reading: {
-                0: 5, 1: 5, 2: 5, 3: 5, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5,
-                10: 5, 11: 5, 12: 5, 13: 5, 14: 5, 15: 5, 16: 10, 17: 10, 18: 15, 19: 20,
-                20: 25, 21: 30, 22: 35, 23: 40, 24: 45, 25: 50, 26: 60, 27: 65, 28: 70, 29: 75,
-                30: 80, 31: 85, 32: 90, 33: 95, 34: 100, 35: 110, 36: 115, 37: 120, 38: 125, 39: 130,
-                40: 135, 41: 140, 42: 145, 43: 150, 44: 160, 45: 165, 46: 170, 47: 175, 48: 180, 49: 185,
-                50: 190, 51: 200, 52: 205, 53: 210, 54: 215, 55: 220, 56: 225, 57: 230, 58: 240, 59: 245,
-                60: 250, 61: 255, 62: 260, 63: 265, 64: 270, 65: 280, 66: 285, 67: 290, 68: 295, 69: 300,
-                70: 305, 71: 310, 72: 315, 73: 325, 74: 330, 75: 335, 76: 340, 77: 345, 78: 350, 79: 355,
-                80: 365, 81: 370, 82: 375, 83: 380, 84: 385, 85: 390, 86: 395, 87: 400, 88: 405, 89: 415,
-                90: 420, 91: 425, 92: 430, 93: 435, 94: 440, 95: 445, 96: 450, 97: 460, 98: 465, 99: 470, 100: 495
-            }
-        };
+<!-- 03 UPLOAD -->
+<div class="panel">
+  <div class="panel-title">03 — Chargement des PDFs scannés</div>
+  <div class="grid2">
+    <div>
+      <div class="dropzone" id="dz-l"
+        ondragover="dzDrag(event,'l')" ondragleave="dzLeave('l')" ondrop="dzDrop(event,'l')"
+        onclick="document.getElementById('file-l').click()">
+        <input type="file" id="file-l" accept=".pdf" onchange="loadPDF('l',this)">
+        <div class="dz-icon">🎧</div>
+        <div class="dz-label">Section LISTENING</div>
+        <div class="dz-hint">PDF multi-pages — 1 page par étudiant</div>
+        <div id="dz-l-status" class="dz-status" style="display:none"></div>
+      </div>
+      <div class="prog-wrap" id="prog-l-wrap"><div class="prog-bar" id="prog-l-bar"></div></div>
+      <div class="prog-label" id="prog-l-label"></div>
+    </div>
+    <div>
+      <div class="dropzone" id="dz-r"
+        ondragover="dzDrag(event,'r')" ondragleave="dzLeave('r')" ondrop="dzDrop(event,'r')"
+        onclick="document.getElementById('file-r').click()">
+        <input type="file" id="file-r" accept=".pdf" onchange="loadPDF('r',this)">
+        <div class="dz-icon">📖</div>
+        <div class="dz-label">Section READING</div>
+        <div class="dz-hint">PDF multi-pages — 1 page par étudiant</div>
+        <div id="dz-r-status" class="dz-status" style="display:none"></div>
+      </div>
+      <div class="prog-wrap" id="prog-r-wrap"><div class="prog-bar" id="prog-r-bar"></div></div>
+      <div class="prog-label" id="prog-r-label"></div>
+    </div>
+  </div>
+</div>
 
-        // ==========================================
-        // 2. DICTIONNAIRE DES CLES DE REPONSES
-        // ==========================================
-        const toeicAnswerKeys = {
-            "rentree-1": {
-                listening: ["A","C","D","B","A","C","B","D","A","B","C","A","B","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B"],
-                reading: ["B","C","A","D","B","A","D","C","D","A","B","C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B"]
-            },
-            "rentree-2": {
-                listening: ["B","D","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C"],
-                reading: ["C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B"]
-            },
-            "s5": {
-                listening: ["C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B"],
-                reading: ["A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C"]
-            },
-            "s6": {
-                listening: ["B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C"],
-                reading: ["D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A"]
-            },
-            "s7": {
-                listening: ["A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C","D"],
-                reading: ["B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D"]
-            },
-            "rattrapage-ec": {
-                listening: ["A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C","D","B"],
-                reading: ["A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D","B","A"]
-            }
-        };
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <div class="action-msg">
+    Session : <span id="msg-session">—</span><br>
+    PDF Listening : <span id="msg-l">non chargé</span> &nbsp;|&nbsp; PDF Reading : <span id="msg-r">non chargé</span>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="resetAll()">🔄 Réinitialiser</button>
+    <button class="btn btn-gold" id="btn-analyze" onclick="lancerAnalyse()" disabled>🔍 Analyser les PDFs</button>
+    <button class="btn btn-green" id="btn-export" onclick="exporterExcel()" disabled>📥 Exporter Excel</button>
+  </div>
+</div>
 
-        // ==========================================
-        // 3. FONCTION DE CORRESPONDANCE (MAPPING)
-        // ==========================================
-        function getSessionKeyFromFileName(fileName) {
-            const name = fileName.toLowerCase();
-            
-            if (name.includes('rentree') || name.includes('rentrée')) {
-                if (name.includes('second') || name.includes('2')) return 'rentree-2';
-                return 'rentree-1';
-            }
-            if (name.includes('s5')) return 's5';
-            if (name.includes('s6')) return 's6';
-            if (name.includes('s7')) return 's7';
-            if (name.includes('rattrapage') || name.includes('ec')) return 'rattrapage-ec';
-            
-            return null;
-        }
+<!-- LOG -->
+<div id="log-section" class="panel">
+  <div class="panel-title">Journal d'analyse en temps réel</div>
+  <div class="log-box" id="log-box"></div>
+</div>
 
-        // ==========================================
-        // LOGIQUE D'INTERFACE
-        // ==========================================
-        
-        // Données fictives pour la démonstration d'affichage
-        const studentsData = [
-            {id: 93, nom: "MARY", prenom: "Clement", dept: "2A6BA", copie: 93, reel: 92, conv: 465, cecrl: "B2", p1:6, p2:23, p3:34, p4:29},
-            {id: 26, nom: "AMOVIN", prenom: "Damien", dept: "EIF2A3", copie: 26, reel: 25, conv: 180, cecrl: "A2", p1:3, p2:9, p3:10, p4:3},
-            {id: 13, nom: "CHIGANI", prenom: "Hilem", dept: "EIF2A3", copie: 93, reel: 93, conv: 470, cecrl: "B2", p1:6, p2:24, p3:35, p4:28},
-            {id: 68, nom: "COJAN", prenom: "Brice", dept: "EIF2A3", copie: 68, reel: 68, conv: 360, cecrl: "B1", p1:5, p2:17, p3:26, p4:20},
-            {id: 23, nom: "DE SOUZA", prenom: "Abla Dorine", dept: "EIF2A3", copie: 57, reel: 57, conv: 290, cecrl: "B1", p1:5, p2:13, p3:23, p4:16}
-        ];
+<!-- RESULTS -->
+<div id="results-section">
+  <div class="panel">
+    <div class="panel-title">Résultats — <span id="res-session-label"></span></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-count">—</div><div class="stat-lbl">Étudiants</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-avg">—</div><div class="stat-lbl">Score moyen /990</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-lowconf">—</div><div class="stat-lbl">⚠ Confiance faible</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-pass">—</div><div class="stat-lbl">≥ 785 pts (B2+)</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tab-all" onclick="switchTab('all')">Tous les étudiants</div>
+      <div class="tab" id="tab-lowconf" onclick="switchTab('lowconf')">⚠ Confiance faible</div>
+      <div class="tab" id="tab-detail" onclick="switchTab('detail')">Détail par partie</div>
+    </div>
+    <div class="table-wrap">
+      <table class="res" id="res-table">
+        <thead>
+          <tr>
+            <th class="left">ID</th>
+            <th class="left">Nom</th>
+            <th>Dépt.</th>
+            <th>Brut L</th>
+            <th>Score L /495</th>
+            <th>Brut R</th>
+            <th>Score R /495</th>
+            <th>Total /990</th>
+            <th>CECRL</th>
+            <th>Confiance L</th>
+            <th>Confiance R</th>
+            <th id="col-detail" style="display:none">P1|P2|P3|P4|P5|P6|P7</th>
+          </tr>
+        </thead>
+        <tbody id="res-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-        function updateFileStatus(type, input) {
-            const status = document.getElementById('status-' + type);
-            if(input.files.length > 0) {
-                const fileName = input.files[0].name;
-                status.innerText = "📄 " + fileName + " chargé";
-                status.classList.remove('text-gray-400');
-                status.classList.add('text-blue-600', 'font-medium');
+<!-- REVIEW LOW CONFIDENCE -->
+<div id="review-section" class="panel">
+  <div class="panel-title">Pages à vérifier manuellement — Confiance faible</div>
+  <p style="font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-bottom:14px">Ces feuilles ont été identifiées comme ambiguës par le modèle (bulles mal noircies, scan de mauvaise qualité, double-cochage…). Vérifiez visuellement les réponses extraites.</p>
+  <div class="review-grid" id="review-grid"></div>
+</div>
 
-                // Détection automatique de la session en fonction du nom du fichier
-                const detectedSession = getSessionKeyFromFileName(fileName);
-                if(detectedSession) {
-                    document.getElementById('session-select').value = detectedSession;
-                }
-            }
-        }
+</main>
+<footer style="text-align:center;font-family:var(--mono);font-size:.6rem;color:var(--muted);padding:18px 0 8px;letter-spacing:.08em">MARC VASSEUR · POLYTECH LILLE · CORRECTEUR TOEIC VISION IA</footer>
 
-        function simulerAnalyse() {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
-            
-            // Simulation : Dans le futur, cette boucle itèrera sur les vraies réponses ZipGrade extraites
-            // pour les comparer avec `toeicAnswerKeys[sessionChoisie]` et convertir avec `conversionTable`.
-            studentsData.forEach(st => {
-                const hasAlert = st.copie !== st.reel;
-                const row = document.createElement('tr');
-                if (hasAlert) row.className = "bg-amber-50/60 font-medium";
-                
-                row.innerHTML = `
-                    <td class="p-3 text-gray-500 font-mono">${st.id}</td>
-                    <td class="p-3 font-semibold text-gray-900">${st.nom} <span class="font-normal text-gray-600">${st.prenom}</span></td>
-                    <td class="p-3"><span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">${st.dept}</span></td>
-                    <td class="p-3 text-center text-gray-500">${st.copie}</td>
-                    <td class="p-3 text-center ${hasAlert ? 'text-red-600 font-bold' : ''}">${st.reel}</td>
-                    <td class="p-3 text-center font-semibold text-blue-600">${st.conv}</td>
-                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">${st.cecrl}</span></td>
-                    <td class="p-3 text-center text-xs text-gray-500 font-mono">P1:${st.p1} | P2:${st.p2} | P3:${st.p3} | P4:${st.p4}</td>
-                `;
-                tbody.appendChild(row);
-            });
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-            document.getElementById('results-section').classList.remove('hidden');
-            const btn = document.getElementById('btn-export');
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white');
-            btn.disabled = false;
-        }
+// ═══════════════════════════════════════════════════════
+// TABLES ETS + CLÉS
+// ═══════════════════════════════════════════════════════
+const convTable = {
+  L:{0:5,1:5,2:5,3:5,4:5,5:5,6:5,7:10,8:10,9:10,10:15,11:20,12:25,13:30,14:35,15:40,16:45,17:50,18:55,19:60,20:65,21:70,22:75,23:80,24:85,25:90,26:95,27:100,28:110,29:115,30:120,31:125,32:130,33:135,34:140,35:145,36:150,37:160,38:165,39:170,40:175,41:180,42:185,43:190,44:195,45:200,46:210,47:215,48:220,49:225,50:230,51:240,52:245,53:250,54:255,55:260,56:265,57:270,58:280,59:285,60:290,61:295,62:300,63:305,64:310,65:320,66:325,67:330,68:335,69:340,70:350,71:355,72:360,73:365,74:370,75:375,76:380,77:390,78:395,79:400,80:405,81:410,82:415,83:420,84:425,85:430,86:440,87:445,88:450,89:455,90:460,91:465,92:470,93:475,94:480,95:485,96:490,97:495,98:495,99:495,100:495},
+  R:{0:5,1:5,2:5,3:5,4:5,5:5,6:5,7:5,8:5,9:5,10:5,11:5,12:5,13:5,14:5,15:5,16:10,17:10,18:15,19:20,20:25,21:30,22:35,23:40,24:45,25:50,26:60,27:65,28:70,29:75,30:80,31:85,32:90,33:95,34:100,35:110,36:115,37:120,38:125,39:130,40:135,41:140,42:145,43:150,44:160,45:165,46:170,47:175,48:180,49:185,50:190,51:200,52:205,53:210,54:215,55:220,56:225,57:230,58:240,59:245,60:250,61:255,62:260,63:265,64:270,65:280,66:285,67:290,68:295,69:300,70:305,71:310,72:315,73:325,74:330,75:335,76:340,77:345,78:350,79:355,80:365,81:370,82:375,83:380,84:385,85:390,86:395,87:400,88:405,89:415,90:420,91:425,92:430,93:435,94:440,95:445,96:450,97:460,98:465,99:470,100:495}
+};
+const KEYS = {
+  "rentree-1":{L:["A","C","D","B","A","C","B","D","A","B","C","A","B","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B"],R:["B","C","A","D","B","A","D","C","D","A","B","C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B"]},
+  "rentree-2":{L:["B","D","A","C","C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C"],R:["C","A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B"]},
+  "s5":{L:["C","B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B"],R:["A","D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C"]},
+  "s6":{L:["B","A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A"],R:["D","B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A"]},
+  "s7":{L:["A","A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C"],R:["B","A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D"]},
+  "rattrapage-ec":{L:["A","B","C","A","B","C","C","B","A","A","C","B","C","A","A","C","A","B","B","C","B","A","B","B","A","C","D","B","C","D","A","A","A","C","A","C","D","A","C","D","B","B","B","D","C","A","B","C","A","D","A","C","B","B","C","D","A","D","B","C","A","D","A","D","B","C","B","A","C","D","B","C","A","D","B","D","A","C","C","A","D","B","A","C","D","B","A","C","B","D","A","B","C","A","C","D","B","A","C","D"],R:["A","C","D","B","A","D","B","C","C","A","B","C","D","A","B","D","C","A","B","C","C","A","D","B","D","B","C","A","D","D","B","C","A","B","A","D","A","B","D","C","C","A","D","B","C","A","D","D","B","C","A","B","C","D","A","A","C","B","D","D","A","B","C","D","A","C","D","A","B","C","D","A","B","A","D","B","C","A","D","D","B","C","A","D","B","B","C","A","D","B","A","D","C","D","A","B","C","A","D","B"]}
+};
 
-        async function exporterExcel() {
-            const selectEl = document.getElementById('session-select');
-            const sessionName = selectEl.options[selectEl.selectedIndex].text;
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let pdfPagesL = []; // [{pageNum, canvas, dataURL}]
+let pdfPagesR = [];
+let extractedL = []; // [{id,answers:[],confidence,thumb}]
+let extractedR = [];
+let correctedData = [];
+let currentTab = 'all';
+let isAnalyzing = false;
 
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('TOEIC Extraction');
-            worksheet.views = [{ showGridLines: true }];
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.onload = () => { onSessionChange(); };
 
-            worksheet.mergeCells('A1:L1');
-            worksheet.getCell('A1').value = `Session ${sessionName} - Résultats Compréhension Orale (Listening)`;
-            worksheet.getCell('A1').font = { name: 'Calibri', size: 16, bold: true, color: { argb: '1F497D' } };
+function onSessionChange() {
+  const sel = document.getElementById('session-select');
+  document.getElementById('msg-session').textContent = sel.options[sel.selectedIndex].text;
+}
 
-            const headers = ["ID", "Nom", "Prénom", "Département", "Score Copie", "Score Réel", "Score L (/495)", "Niveau L", "P1 (/6)", "P2 (/25)", "P3 (/39)", "P4 (/30)"];
-            const headerRow = worksheet.addRow(headers);
-            headerRow.height = 25;
-            headerRow.eachCell(cell => {
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '365F91' } };
-                cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFF' } };
-                cell.alignment = { horizontal: 'center', vertical: 'middle' };
-            });
+function updateStatus() {
+  document.getElementById('msg-l').textContent = pdfPagesL.length ? pdfPagesL.length + ' pages chargées' : 'non chargé';
+  document.getElementById('msg-r').textContent = pdfPagesR.length ? pdfPagesR.length + ' pages chargées' : 'non chargé';
+  document.getElementById('btn-analyze').disabled = !(pdfPagesL.length && pdfPagesR.length) || isAnalyzing;
+}
 
-            studentsData.forEach((st, index) => {
-                const row = worksheet.addRow([st.id, st.nom, st.prenom, st.dept, st.copie, st.reel, st.conv, st.cecrl, st.p1, st.p2, st.p3, st.p4]);
-                row.height = 20;
-                const baseColor = index % 2 === 0 ? 'F2F5F8' : 'FFFFFF';
-                row.eachCell((cell, colNum) => {
-                    cell.font = { name: 'Calibri', size: 11 };
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: baseColor } };
-                    if (st.copie !== st.reel && [5,6].includes(colNum)) {
-                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2CC' } };
-                        cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'CC0000' } };
-                    }
-                });
-            });
+// ═══════════════════════════════════════════════════════
+// DRAG & DROP
+// ═══════════════════════════════════════════════════════
+function dzDrag(e,id){e.preventDefault();document.getElementById('dz-'+id).classList.add('drag-over');}
+function dzLeave(id){document.getElementById('dz-'+id).classList.remove('drag-over');}
+function dzDrop(e,id){e.preventDefault();dzLeave(id);const f=e.dataTransfer.files[0];if(f){const inp=document.getElementById('file-'+id);const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;loadPDF(id,inp);}}
 
-            worksheet.columns.forEach(column => { column.width = 14; });
+// ═══════════════════════════════════════════════════════
+// PDF → IMAGES
+// ═══════════════════════════════════════════════════════
+async function loadPDF(sec, input) {
+  const file = input.files[0];
+  if(!file) return;
+  const dz = document.getElementById('dz-'+sec);
+  const st = document.getElementById('dz-'+sec+'-status');
+  dz.classList.add('processing');
+  st.className = 'dz-status info';
+  st.textContent = '⏳ Chargement du PDF…';
+  st.style.display = 'block';
 
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            const url = window.URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = `Correction_${sessionName.replace(/ /g, '_')}_Raffinee.xlsx`;
-            anchor.click();
-        }
-    </script>
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    const pages = [];
+    const scale = 1.8; // Résolution suffisante pour la lecture des bulles
+
+    showProg(sec, 0, pdf.numPages);
+
+    for(let i=1; i<=pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({scale});
+      const canvas = document.createElement('canvas');
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+      pages.push({pageNum:i, dataURL: canvas.toDataURL('image/jpeg', 0.85)});
+      showProg(sec, i, pdf.numPages);
+    }
+
+    if(sec==='l') pdfPagesL = pages;
+    else pdfPagesR = pages;
+
+    dz.classList.remove('processing');
+    dz.classList.add('loaded');
+    st.className = 'dz-status ok';
+    st.textContent = `✅ ${file.name} — ${pages.length} page${pages.length>1?'s':''} chargée${pages.length>1?'s':''}`;
+    hideProg(sec);
+    updateStatus();
+    log(`PDF ${sec.toUpperCase()} chargé : ${file.name} (${pages.length} pages)`, 'ok');
+  } catch(err) {
+    dz.classList.remove('processing');
+    dz.classList.add('error-state');
+    st.className = 'dz-status err';
+    st.textContent = '❌ Erreur : ' + err.message;
+    hideProg(sec);
+    log('Erreur chargement PDF ' + sec + ' : ' + err.message, 'err');
+  }
+}
+
+function showProg(sec, cur, total) {
+  const wrap = document.getElementById('prog-'+sec+'-wrap');
+  const bar  = document.getElementById('prog-'+sec+'-bar');
+  const lbl  = document.getElementById('prog-'+sec+'-label');
+  wrap.style.display = 'block';
+  lbl.style.display = 'block';
+  bar.style.width = (cur/total*100)+'%';
+  lbl.textContent = `Rendu page ${cur}/${total}…`;
+}
+function hideProg(sec) {
+  document.getElementById('prog-'+sec+'-wrap').style.display='none';
+  document.getElementById('prog-'+sec+'-label').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════
+// ANALYSE PRINCIPALE — APPELS VISION API
+// ═══════════════════════════════════════════════════════
+async function lancerAnalyse() {
+  if(isAnalyzing) return;
+  isAnalyzing = true;
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('log-section').style.display = 'block';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('review-section').style.display = 'none';
+  document.getElementById('log-box').innerHTML = '';
+
+  const session = document.getElementById('session-select').value;
+  log('═══ Démarrage analyse — session : ' + session + ' ═══', 'info');
+  log(`Listening : ${pdfPagesL.length} pages | Reading : ${pdfPagesR.length} pages`, 'info');
+
+  extractedL = [];
+  extractedR = [];
+
+  log('── Phase 1 : Extraction LISTENING ──', 'info');
+  for(let i=0; i<pdfPagesL.length; i++) {
+    log(`  L page ${i+1}/${pdfPagesL.length} — envoi à Claude Vision…`, 'dim');
+    const res = await extractAnswersFromImage(pdfPagesL[i].dataURL, 'L', i+1);
+    extractedL.push({...res, pageNum: i+1, thumb: pdfPagesL[i].dataURL});
+    const conf = res.confidence >= 0.85 ? 'ok' : 'warn';
+    log(`  ✓ L${i+1} | ID: ${res.id||'?'} | ${res.answers.filter(a=>a).length}/100 réponses | confiance: ${Math.round(res.confidence*100)}%`, conf);
+    await sleep(300); // Petit délai pour ne pas saturer l'API
+  }
+
+  log('── Phase 2 : Extraction READING ──', 'info');
+  for(let i=0; i<pdfPagesR.length; i++) {
+    log(`  R page ${i+1}/${pdfPagesR.length} — envoi à Claude Vision…`, 'dim');
+    const res = await extractAnswersFromImage(pdfPagesR[i].dataURL, 'R', i+1);
+    extractedR.push({...res, pageNum: i+1, thumb: pdfPagesR[i].dataURL});
+    const conf = res.confidence >= 0.85 ? 'ok' : 'warn';
+    log(`  ✓ R${i+1} | ID: ${res.id||'?'} | ${res.answers.filter(a=>a).length}/100 réponses | confiance: ${Math.round(res.confidence*100)}%`, conf);
+    await sleep(300);
+  }
+
+  log('── Phase 3 : Correction et calcul des scores ──', 'info');
+  corrigerEtAfficher(session);
+  isAnalyzing = false;
+  document.getElementById('btn-export').disabled = false;
+  log('═══ Analyse terminée ═══', 'info');
+}
+
+// ═══════════════════════════════════════════════════════
+// APPEL API CLAUDE VISION
+// ═══════════════════════════════════════════════════════
+async function extractAnswersFromImage(dataURL, section, pageNum) {
+  const base64 = dataURL.split(',')[1];
+
+  const prompt = `You are analyzing a ZipGrade answer sheet scan for a TOEIC exam.
+
+This is the ${section === 'L' ? 'LISTENING (questions 1-100)' : 'READING (questions 1-100)'} section.
+
+Please extract:
+1. The STUDENT ID — it may appear as bubbled digits in a grid (read each column of bubbled digits) OR as a handwritten/printed number.
+2. All 100 answers (Q1 to Q100) — each bubble should be A, B, C, or D. If a bubble is empty, unclear, or double-marked, use "?" for that question.
+3. Your overall confidence score (0.0 to 1.0) for the reading quality of this sheet.
+
+Respond ONLY with valid JSON, no explanation, no markdown:
+{
+  "id": "student_id_string_or_empty",
+  "answers": ["A","B","C","D",...], 
+  "confidence": 0.95,
+  "notes": "optional short note about issues"
+}
+
+The answers array must have exactly 100 elements. Use "?" for unreadable bubbles.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image', source:{type:'base64', media_type:'image/jpeg', data: base64}},
+            {type:'text', text: prompt}
+          ]
+        }]
+      })
+    });
+
+    if(!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'HTTP ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.content.map(b => b.text||'').join('');
+    const cleaned = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(cleaned);
+
+    // Validation
+    if(!Array.isArray(parsed.answers)) throw new Error('Réponse malformée — tableau answers manquant');
+    while(parsed.answers.length < 100) parsed.answers.push('?');
+    parsed.answers = parsed.answers.slice(0,100).map(a => (a||'?').toUpperCase());
+    parsed.confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 0.5;
+    return {id: parsed.id||'', answers: parsed.answers, confidence: parsed.confidence, notes: parsed.notes||''};
+
+  } catch(err) {
+    log(`  ⚠ Erreur API page ${pageNum} (${section}) : ${err.message}`, 'err');
+    return {id:'', answers: new Array(100).fill('?'), confidence: 0, notes: 'Erreur API: '+err.message};
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CORRECTION
+// ═══════════════════════════════════════════════════════
+function corrigerEtAfficher(session) {
+  const keysL = KEYS[session].L;
+  const keysR = KEYS[session].R;
+  const deptDefault = document.getElementById('dept-default').value || '—';
+
+  // Merge par ID (puis par ordre de page si ID absent)
+  const mapL = new Map();
+  extractedL.forEach((s,i) => mapL.set(s.id && s.id !== '' ? s.id : 'page_'+i, s));
+
+  correctedData = [];
+
+  extractedR.forEach((sr, i) => {
+    const key = sr.id && sr.id !== '' ? sr.id : 'page_'+i;
+    const sl = mapL.get(key) || extractedL[i]; // fallback par ordre de page
+    const answL = sl ? sl.answers : new Array(100).fill('?');
+    const answR = sr.answers;
+
+    const p1 = countPart(answL,keysL,0,6);
+    const p2 = countPart(answL,keysL,6,31);
+    const p3 = countPart(answL,keysL,31,70);
+    const p4 = countPart(answL,keysL,70,100);
+    const brutL = p1+p2+p3+p4;
+
+    const p5 = countPart(answR,keysR,0,30);
+    const p6 = countPart(answR,keysR,30,46);
+    const p7 = countPart(answR,keysR,46,100);
+    const brutR = p5+p6+p7;
+
+    const scoreL = scaled(brutL,'L');
+    const scoreR = scaled(brutR,'R');
+    const total  = scoreL + scoreR;
+    const level  = cecrl(total);
+    const confL  = sl ? sl.confidence : 0;
+    const confR  = sr.confidence;
+    const lowConf = confL < 0.85 || confR < 0.85;
+
+    correctedData.push({
+      id: sr.id || sl?.id || 'p'+(i+1),
+      lastName: '', firstName: '',
+      dept: deptDefault,
+      brutL, brutR, scoreL, scoreR, total, level,
+      p1,p2,p3,p4,p5,p6,p7,
+      confL, confR, lowConf,
+      thumbL: sl?.thumb, thumbR: sr.thumb,
+      notesL: sl?.notes||'', notesR: sr.notes||'',
+      pageNum: i+1
+    });
+
+    log(`  → ID:${correctedData[correctedData.length-1].id} | L:${brutL}/100→${scoreL} | R:${brutR}/100→${scoreR} | Total:${total}/990 | ${level}${lowConf?' ⚠ confiance faible':''}`, lowConf?'warn':'ok');
+  });
+
+  correctedData.sort((a,b) => String(a.id).localeCompare(String(b.id)));
+  renderResults();
+  renderReview();
+}
+
+function countPart(answers,keys,s,e) { let c=0; for(let i=s;i<e;i++) if(answers[i]&&answers[i]===keys[i])c++; return c; }
+function scaled(raw,sec){const k=Math.max(0,Math.min(100,Math.round(raw)));return convTable[sec][k]??5;}
+function cecrl(t){if(t<255)return'A1';if(t<550)return'A2';if(t<785)return'B1';if(t<945)return'B2';return'C1';}
+
+// ═══════════════════════════════════════════════════════
+// RENDER RESULTS TABLE
+// ═══════════════════════════════════════════════════════
+function renderResults() {
+  const sel = document.getElementById('session-select');
+  document.getElementById('res-session-label').textContent = sel.options[sel.selectedIndex].text;
+  const valid = correctedData.filter(s=>s.total!==null);
+  const avg   = valid.length ? Math.round(valid.reduce((a,s)=>a+s.total,0)/valid.length) : 0;
+  const lowC  = correctedData.filter(s=>s.lowConf).length;
+  const pass  = valid.filter(s=>s.total>=785).length;
+  document.getElementById('stat-count').textContent   = correctedData.length;
+  document.getElementById('stat-avg').textContent     = avg||'—';
+  document.getElementById('stat-lowconf').textContent = lowC;
+  document.getElementById('stat-pass').textContent    = pass;
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('results-section').scrollIntoView({behavior:'smooth',block:'start'});
+  switchTab('all');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['all','lowconf','detail'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('active',t===tab));
+  document.getElementById('col-detail').style.display = tab==='detail'?'':'none';
+  const tbody = document.getElementById('res-body');
+  tbody.innerHTML = '';
+  const rows = tab==='lowconf' ? correctedData.filter(s=>s.lowConf) : correctedData;
+  rows.forEach(s => {
+    const tr = document.createElement('tr');
+    if(s.lowConf) tr.classList.add('low-conf');
+    const lvl = `<span class="cecrl-badge cecrl-${s.level}">${s.level}</span>`;
+    const cL  = s.confL >= 0.85 ? `<span class="conf-ok">${Math.round(s.confL*100)}%</span>` : `<span class="conf-low">⚠ ${Math.round(s.confL*100)}%</span>`;
+    const cR  = s.confR >= 0.85 ? `<span class="conf-ok">${Math.round(s.confR*100)}%</span>` : `<span class="conf-low">⚠ ${Math.round(s.confR*100)}%</span>`;
+    const detail = tab==='detail' ? `<td class="detail-cell center">P1:${s.p1}/6 P2:${s.p2}/25 P3:${s.p3}/39 P4:${s.p4}/30 P5:${s.p5}/30 P6:${s.p6}/16 P7:${s.p7}/54</td>` : '';
+    tr.innerHTML = `
+      <td class="mono-sm">${s.id}</td>
+      <td class="mono-sm" style="color:var(--muted)">p.${s.pageNum}</td>
+      <td class="center"><span class="dept-badge">${s.dept}</span></td>
+      <td class="center mono-sm">${s.brutL}</td>
+      <td class="center score-l">${s.scoreL}</td>
+      <td class="center mono-sm">${s.brutR}</td>
+      <td class="center score-r">${s.scoreR}</td>
+      <td class="center score-total">${s.total}</td>
+      <td class="center">${lvl}</td>
+      <td class="center">${cL}</td>
+      <td class="center">${cR}</td>
+      ${detail}`;
+    tbody.appendChild(tr);
+  });
+  if(rows.length===0) tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;font-family:var(--mono);font-size:.7rem;color:var(--muted);padding:20px">Aucun résultat pour ce filtre.</td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER REVIEW (pages confiance faible)
+// ═══════════════════════════════════════════════════════
+function renderReview() {
+  const lowConf = correctedData.filter(s=>s.lowConf);
+  if(lowConf.length===0) return;
+  const grid = document.getElementById('review-grid');
+  grid.innerHTML = '';
+  lowConf.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'review-card low-conf';
+    div.innerHTML = `
+      <h4>⚠ Page ${s.pageNum} — ID: ${s.id} — Confiance L: ${Math.round(s.confL*100)}% / R: ${Math.round(s.confR*100)}%</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <p style="font-family:var(--mono);font-size:.6rem;color:var(--blue);margin-bottom:4px">LISTENING</p>
+          ${s.thumbL ? `<img src="${s.thumbL}" alt="L page ${s.pageNum}" style="max-height:200px;object-fit:contain">` : ''}
+          ${s.notesL ? `<p style="font-family:var(--mono);font-size:.6rem;color:var(--red);margin-top:4px">${s.notesL}</p>` : ''}
+        </div>
+        <div>
+          <p style="font-family:var(--mono);font-size:.6rem;color:var(--purple);margin-bottom:4px">READING</p>
+          ${s.thumbR ? `<img src="${s.thumbR}" alt="R page ${s.pageNum}" style="max-height:200px;object-fit:contain">` : ''}
+          ${s.notesR ? `<p style="font-family:var(--mono);font-size:.6rem;color:var(--red);margin-top:4px">${s.notesR}</p>` : ''}
+        </div>
+      </div>
+      <div class="review-answers">L: ${s.brutL}/100 → ${s.scoreL}/495 &nbsp;|&nbsp; R: ${s.brutR}/100 → ${s.scoreR}/495 &nbsp;|&nbsp; Total: ${s.total}/990</div>`;
+    grid.appendChild(div);
+  });
+  document.getElementById('review-section').style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT EXCEL
+// ═══════════════════════════════════════════════════════
+async function exporterExcel() {
+  const sel = document.getElementById('session-select');
+  const sessionName = sel.options[sel.selectedIndex].text;
+  const group = document.getElementById('group-name').value || sessionName;
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Marc Vasseur — Polytech Lille';
+  wb.created = new Date();
+  const ws = wb.addWorksheet('TOEIC Résultats');
+
+  ws.mergeCells('A1:N1');
+  const t = ws.getCell('A1');
+  t.value = `Résultats TOEIC — ${sessionName} — ${group}`;
+  t.font = {name:'Calibri',size:14,bold:true,color:{argb:'0D1B2A'}};
+  t.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'C9A84C'}};
+  t.alignment = {horizontal:'center',vertical:'middle'};
+  ws.getRow(1).height = 28;
+
+  ws.mergeCells('A2:N2');
+  const s2 = ws.getCell('A2');
+  s2.value = `Généré le ${new Date().toLocaleDateString('fr-FR')} par Marc Vasseur, Polytech Lille — Lecture Vision IA`;
+  s2.font = {name:'Calibri',size:9,italic:true,color:{argb:'6B7C93'}};
+  s2.alignment = {horizontal:'center'};
+  ws.getRow(2).height = 14;
+
+  const hdrs = ['ID','Page','Département','Brut L /100','Score L /495','Brut R /100','Score R /495','Total /990','CECRL','Confiance L','Confiance R','P1 /6','P2 /25','P3 /39','P4 /30','P5 /30','P6 /16','P7 /54'];
+  const hRow = ws.addRow(hdrs);
+  hRow.height = 22;
+  hRow.eachCell(c => {
+    c.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'0D1B2A'}};
+    c.font = {name:'Calibri',size:10,bold:true,color:{argb:'C9A84C'}};
+    c.alignment = {horizontal:'center',vertical:'middle'};
+    c.border = {bottom:{style:'medium',color:{argb:'C9A84C'}}};
+  });
+
+  const CECRL_COLORS = {A1:'FDE8E8',A2:'FEF0D8',B1:'FDF9E0',B2:'E8F5E9',C1:'E8F0FE'};
+  correctedData.forEach((s,i) => {
+    const row = ws.addRow([
+      s.id, 'p.'+s.pageNum, s.dept,
+      s.brutL, s.scoreL, s.brutR, s.scoreR, s.total, s.level,
+      Math.round(s.confL*100)+'%', Math.round(s.confR*100)+'%',
+      s.p1, s.p2, s.p3, s.p4, s.p5, s.p6, s.p7
+    ]);
+    row.height = 18;
+    const base = i%2===0 ? 'F5F0E8' : 'FFFFFF';
+    row.eachCell((cell,col) => {
+      cell.font = {name:'Calibri',size:10};
+      cell.alignment = {horizontal:'center',vertical:'middle'};
+      cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb: s.lowConf ? 'FDF0F0' : base}};
+      if(col===9) { cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:CECRL_COLORS[s.level]||'FFFFFF'}}; }
+      if(col<=3) cell.alignment = {horizontal:'left',vertical:'middle'};
+      if(col===8) cell.font = {name:'Calibri',size:11,bold:true};
+    });
+  });
+
+  [8,6,12,8,10,8,10,9,8,9,9,7,7,7,7,7,7,7].forEach((w,i)=>{ws.getColumn(i+1).width=w;});
+
+  const vRow = ws.addRow(['','','Total :',correctedData.length,'',
+    'Moy :',correctedData.filter(s=>s.total).length
+      ? Math.round(correctedData.filter(s=>s.total).reduce((a,s)=>a+s.total,0)/correctedData.filter(s=>s.total).length) : '—',
+    '','','','','','','≥785 :',correctedData.filter(s=>s.total>=785).length,'','Conf. faible :',correctedData.filter(s=>s.lowConf).length]);
+  vRow.eachCell(c=>{c.font={name:'Calibri',size:10,bold:true,color:{argb:'0D1B2A'}};});
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=`TOEIC_${sessionName.replace(/[^a-zA-Z0-9]/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function log(msg, type='') {
+  const box = document.getElementById('log-box');
+  const el = document.createElement('div');
+  el.className = type ? 'log-'+type : '';
+  el.textContent = msg;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+function resetAll() {
+  pdfPagesL=[]; pdfPagesR=[]; extractedL=[]; extractedR=[]; correctedData=[];
+  ['l','r'].forEach(id=>{
+    const dz=document.getElementById('dz-'+id);
+    dz.classList.remove('loaded','processing','error-state','drag-over');
+    const st=document.getElementById('dz-'+id+'-status');
+    st.style.display='none'; st.textContent='';
+    document.getElementById('file-'+id).value='';
+  });
+  document.getElementById('log-section').style.display='none';
+  document.getElementById('results-section').style.display='none';
+  document.getElementById('review-section').style.display='none';
+  document.getElementById('log-box').innerHTML='';
+  document.getElementById('btn-export').disabled=true;
+  document.getElementById('btn-analyze').disabled=true;
+  updateStatus();
+}
+</script>
 </body>
 </html>
